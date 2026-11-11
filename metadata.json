@@ -1,0 +1,6 @@
+{
+  "name": "ShopyExpress",
+  "description": "Application de vide-dressing et marketplace de seconde main en RDC (Kinshasa, Lubumbashi, Goma...)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

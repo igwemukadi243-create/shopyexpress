@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Article mis en vente sur la marketplace ShopyExpress en RDC",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerAvatarUrl": { "type": "string" },
+        "sellerRating": { "type": "number" },
+        "sellerSalesCount": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priceUsd": { "type": "number" },
+        "originalPriceUsd": { "type": "number" },
+        "brand": { "type": "string" },
+        "size": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "condition": { "type": "string" },
+        "city": { "type": "string" },
+        "commune": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "isVerifiedSeller": { "type": "boolean" },
+        "isSold": { "type": "boolean" },
+        "likesCount": { "type": "integer" },
+        "viewsCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "title", "priceUsd", "categoryId", "city", "imageUrl", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Commande d'achat ShopyExpress en RDC",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productTitle": { "type": "string" },
+        "productPriceUsd": { "type": "number" },
+        "buyerProtectionFeeUsd": { "type": "number" },
+        "deliveryFeeUsd": { "type": "number" },
+        "totalUsd": { "type": "number" },
+        "productImageUrl": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "buyerCity": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "status": { "type": "string" },
+        "trackingCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "productId", "totalUsd", "deliveryAddress", "phoneNumber", "paymentMethod", "status", "trackingCode", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil utilisateur et dressing sur ShopyExpress",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "handle": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "commune": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "integer" },
+        "walletBalanceUsd": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "city", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Catalogue public des articles en vente sur ShopyExpress RDC"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Commandes passées entre acheteurs et vendeurs"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Profils des utilisateurs, dressing et portefeuille"
+    }
+  }
+}

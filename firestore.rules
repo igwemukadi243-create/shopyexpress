@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidProduct(data) {
+      return data.title is string && data.title.size() >= 2 && data.title.size() <= 200 &&
+             data.sellerId is string && data.sellerId.size() > 0 &&
+             data.priceUsd is number && data.priceUsd > 0 && data.priceUsd <= 50000 &&
+             data.city is string && data.city.size() >= 2 && data.city.size() <= 100 &&
+             data.categoryId is string && data.categoryId.size() >= 2 && data.categoryId.size() <= 50 &&
+             data.imageUrl is string && data.imageUrl.size() <= 1000 &&
+             (!('brand' in data) || (data.brand is string && data.brand.size() <= 100)) &&
+             (!('size' in data) || (data.size is string && data.size.size() <= 50)) &&
+             (!('condition' in data) || (data.condition is string && data.condition.size() <= 50)) &&
+             (!('commune' in data) || (data.commune is string && data.commune.size() <= 100)) &&
+             (!('sellerName' in data) || (data.sellerName is string && data.sellerName.size() <= 100)) &&
+             (!('sellerAvatarUrl' in data) || (data.sellerAvatarUrl is string && data.sellerAvatarUrl.size() <= 1000)) &&
+             (!('isSold' in data) || data.isSold is bool) &&
+             (!('isVerifiedSeller' in data) || data.isVerifiedSeller is bool) &&
+             (!('likesCount' in data) || (data.likesCount is int && data.likesCount >= 0)) &&
+             (!('viewsCount' in data) || (data.viewsCount is int && data.viewsCount >= 0)) &&
+             (!('originalPriceUsd' in data) || (data.originalPriceUsd is number && data.originalPriceUsd >= 0)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidOrder(data) {
+      return data.buyerId is string && data.buyerId.size() > 0 &&
+             data.productId is string && data.productId.size() > 0 &&
+             data.totalUsd is number && data.totalUsd > 0 &&
+             data.deliveryAddress is string && data.deliveryAddress.size() >= 3 && data.deliveryAddress.size() <= 300 &&
+             data.phoneNumber is string && data.phoneNumber.size() >= 5 && data.phoneNumber.size() <= 30 &&
+             data.paymentMethod is string && data.paymentMethod.size() <= 50 &&
+             data.status is string && data.status.size() <= 50 &&
+             data.trackingCode is string && data.trackingCode.size() <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             (!('handle' in data) || (data.handle is string && data.handle.size() <= 100)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 50)) &&
+             data.city is string && data.city.size() <= 100 &&
+             (!('commune' in data) || (data.commune is string && data.commune.size() <= 100)) &&
+             (!('avatarUrl' in data) || (data.avatarUrl is string && data.avatarUrl.size() <= 1000)) &&
+             (!('walletBalanceUsd' in data) || (data.walletBalanceUsd is number && data.walletBalanceUsd >= 0)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // Products collection (Marketplace catalog in DRC)
+    match /products/{productId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(productId) &&
+                       incoming().sellerId == request.auth.uid &&
+                       isValidProduct(incoming());
+      allow update: if isSignedIn() && isValidId(productId) &&
+                       isValidProduct(incoming()) &&
+                       (
+                         (existing().sellerId == request.auth.uid && incoming().sellerId == existing().sellerId) ||
+                         (incoming().diff(existing()).affectedKeys().hasOnly(['isSold', 'likesCount', 'viewsCount']))
+                       );
+      allow delete: if isSignedIn() && isValidId(productId) && existing().sellerId == request.auth.uid;
+    }
+
+    // Orders collection (Purchases & tracking)
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && isValidId(orderId) &&
+                    (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow list: if isSignedIn() && resource.data.buyerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(orderId) &&
+                       incoming().buyerId == request.auth.uid &&
+                       isValidOrder(incoming());
+      allow update: if isSignedIn() && isValidId(orderId) &&
+                       (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid) &&
+                       isValidOrder(incoming());
+    }
+
+    // User profiles & dressings
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update: if isSignedIn() && isValidId(userId) &&
+                               request.auth.uid == userId &&
+                               incoming().userId == request.auth.uid &&
+                               isValidUserProfile(incoming());
+    }
+  }
+}
